@@ -1,0 +1,220 @@
+/* 
+Created by: Afifah
+Create on: 3 Mar 2023
+Description:
+*/
+
+--1. How many transactions took place between the years 2011 and 2012?
+
+SELECT
+	InvoiceId,
+	CustomerId,
+	InvoiceDate,
+	total
+FROM
+	Invoice
+WHERE
+	date(InvoiceDate) >= '2011-01-01' AND date(invoicedate) <= '2012-12-31'
+ORDER by
+		InvoiceDate
+		
+--2. How much money did WSDA Music make during the same period?
+		
+SELECT
+	sum(total)
+FROM
+	Invoice
+WHERE
+	date(InvoiceDate) >= '2011-01-01' AND date(invoicedate) <= '2012-12-31'
+
+/* 
+Created by: Afifah
+Create on: 3 Mar 2023
+Description: Responding to question
+*/
+
+
+-- 3. Get a list of customers who made purchases between 2011 and 2012.
+
+SELECT
+	i.InvoiceId,
+	i.CustomerId,
+	i.InvoiceDate,
+	i.total,
+	c.FirstName || ' ' || c.LastName AS [Customer Name],
+	c.City
+FROM
+	Invoice i
+INNER JOIN
+	Customer c
+ON
+	i.CustomerId = c.CustomerId
+WHERE
+	date(i.InvoiceDate) > '2011-01-01' AND date(i.invoicedate) < '2012-12-31'
+ORDER by
+		i.total DESC
+		
+		
+		
+--4. Get a list of customers, sales reps, and total transaction amounts for each customer between 2011 and 2012.
+
+SELECT
+	c.CustomerId,
+	c.FirstName || ' ' || c.LastName AS [Customer Name],
+	e.FirstName || ' ' || e.LastName AS [Employee Name],
+	i.total
+FROM
+	Customer c
+INNER JOIN
+	Invoice i
+on
+	c.CustomerId = i.CustomerId
+LEFT JOIN
+	Employee e
+on
+	e.EmployeeId = c.SupportRepId
+WHERE
+	date(i.InvoiceDate) >= '2011-01-01' AND date(i.invoicedate) <= '2012-12-31'
+ORDER by
+	i.total DESC
+	
+	
+--5. How many transactions are above the average transaction amount during the same time period?
+
+SELECT
+	Count(total) AS [Num of transaction above average]
+FROM
+	Invoice
+WHERE
+	date(invoicedate) >= '2011-01-01' AND date(invoicedate) <= '2012-12-31' AND total >
+(SELECT
+	ROUND(AVG(TOTAL),2)
+FROM
+	Invoice
+WHERE
+	InvoiceDate >= '2011-01-01' AND InvoiceDate <= '2012-12-31')
+ORDER BY
+	total 
+	
+	
+--6. What is the average transaction amount for each year that WSDA Music has been in business?
+
+SELECT
+	InvoiceDate,
+	substr(INVOICEDATE,1,4) AS [YEAR],
+	strftime('%Y',INVOICEDATE) AS [Year using strftime],
+	round(avg(total),2) AS 'Average Total'
+FROM
+	Invoice
+GROUP BY
+	substr(INVOICEDATE,1,4)
+  
+  /* 
+Created by: Afifah
+Create on: 3 Mar 2023
+Description: Responding to question
+*/
+
+--7. Get a list of employees who exceeded the average transaction amount from sales they generated during 2011 and 2012.
+
+SELECT
+	e.FirstName || ' ' || e.LastName AS 'Employee Name',
+	sum(i.total) AS [Total sales]
+FROM
+	Invoice i
+INNER JOIN
+	Customer c
+ON
+	i.CustomerId = c.CustomerId
+LEFT JOIN
+	Employee e
+ON 
+	c.SupportRepId = e.EmployeeId
+WHERE
+	date(i.INVOICEDATE) >= '2011-01-01' AND date(i.INVOICEDATE) <= '2012-12-31' AND
+	total >
+	(SELECT
+		round(avg(TOTAL),2)
+	FROM
+		Invoice
+	WHERE
+		date(invoicedate) >= '2011-01-01' and date(invoicedate) <= '2012-12-31')
+GROUP BY
+	e.FirstName || ' ' || e.LastName
+ORDER by
+	i.total
+	
+-- 8. Create a Commission Payout column that displays each employee’s commission based on 15% of the sales transaction amount.
+
+SELECT
+	e.FirstName || ' ' || e.LastName AS [Employee Name],
+	sum(i.total) AS [Total Sales],
+	round(sum(i.total)*.15,2) AS [Commission Payout]
+FROM
+	Invoice i
+inner JOIN
+	Customer c
+on
+	i.CustomerId = c.CustomerId
+INNER JOIN
+	Employee e
+on c.SupportRepId = e.EmployeeId
+WHERE
+	InvoiceDate >= '2011-01-01' AND InvoiceDate <= '2012-12-31'
+group by
+	e.FirstName || ' ' || e.LastName
+
+-- 9. Which employee made the highest commission?
+-- Jane Peacock      	$199.77
+	
+--10. List the customers that the employee identified in the last question.
+
+SELECT
+	e.FirstName || ' ' || e.LastName AS [Employee Name],
+	c.FirstName || ' ' || c.LastName AS [Customer Name],
+	sum(i.total) AS [Total Sales],
+	round(sum(i.total)*.15,2) AS [Comission Payout]
+FROM
+	Invoice i
+INNER JOIN
+	Customer c
+on i.CustomerId = c.CustomerId
+INNER JOIN
+	Employee e
+on e.EmployeeId = c.SupportRepId
+WHERE
+	e.FirstName || ' ' || e.LastName = 'Jane Peacock' AND 
+	InvoiceDate >= '2011-01-01' AND InvoiceDate <= '2012-12-31'
+GROUP by
+	c.FirstName || ' ' || c.LastName
+ORDER by
+	[Total Sales] DESC
+	
+
+-- 11. Which customer made the highest purchase?
+
+SELECT
+	C.FirstName || ' ' || C.LastName AS 'Customer Name',
+	I.total
+FROM
+	Invoice I
+INNER JOIN
+	Customer C
+ON
+	C.CustomerId = I.CustomerId
+WHERE 	
+	date(I.InvoiceDate) >= '2011-01-01' AND date(I.InvoiceDate) <= '2012-12-31'
+GROUP BY
+	C.FirstName || ' ' || C.LastName
+ORDER by
+	I.total DESC
+	
+--12. Look at this customer record—do you see anything suspicious?
+SELECT *
+FROM Customer c
+WHERE
+	c.LastName = 'Doeein'
+
+
+--13. Who do you conclude is our primary person of interest?
+	--Jane Peacock
